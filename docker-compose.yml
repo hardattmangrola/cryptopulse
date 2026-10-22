@@ -1,0 +1,214 @@
+services:
+  # -------------------------------------------------------------
+  # PostgreSQL Database (Persistence layer)
+  # -------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: cryptopulse_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cryptopulse}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cryptopulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cryptopulse_net
+
+  # -------------------------------------------------------------
+  # MLflow Tracking Server
+  # -------------------------------------------------------------
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    container_name: cryptopulse_mlflow
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
+    volumes:
+      - mlflow_data:/mlflow
+    networks:
+      - cryptopulse_net
+
+  # -------------------------------------------------------------
+  # Service 1: Market Data Ingestion Microservice
+  # -------------------------------------------------------------
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: cryptopulse_ingestion
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cryptopulse}
+      BINANCE_SYMBOL: BTCUSDT
+      BINANCE_CANDLE_INTERVAL: 1m
+      BINANCE_POLL_INTERVAL_SECONDS: 60
+    volumes:
+      - ./shared:/app/shared
+      - ./services:/app/services
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cryptopulse_net
+
+  # -------------------------------------------------------------
+  # Service 3: Real-Time Inference Microservice
+  # -------------------------------------------------------------
+  inference:
+    build:
+      context: .
+      dockerfile: services/inference/Dockerfile
+    container_name: cryptopulse_inference
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cryptopulse}
+      BINANCE_SYMBOL: BTCUSDT
+      TRAINING_SERVICE_URL: http://training:8003
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      HISTORICAL_DATA_PATH: /app/btcusd_1-min_data.csv
+    volumes:
+      - ./shared:/app/shared
+      - ./services:/app/services
+      - ./models:/app/models
+      - ./btcusd_1-min_data.csv:/app/btcusd_1-min_data.csv:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      training:
+        condition: service_started
+      mlflow:
+        condition: service_started
+    networks:
+      - cryptopulse_net
+
+  # -------------------------------------------------------------
+  # Service 2: Model Training Microservice
+  # -------------------------------------------------------------
+  training:
+    build:
+      context: .
+      dockerfile: services/training/Dockerfile
+    container_name: cryptopulse_training
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cryptopulse}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      HISTORICAL_DATA_PATH: /app/btcusd_1-min_data.csv
+    volumes:
+      - ./shared:/app/shared
+      - ./services:/app/services
+      - ./btcusd_1-min_data.csv:/app/btcusd_1-min_data.csv:ro
+      - ./models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    networks:
+      - cryptopulse_net
+
+  # -------------------------------------------------------------
+  # Service 4: Continuous Monitoring & Maintenance Microservice
+  # -------------------------------------------------------------
+  monitoring:
+    build:
+      context: .
+      dockerfile: services/monitoring/Dockerfile
+    container_name: cryptopulse_monitoring
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cryptopulse}
+      TRAINING_SERVICE_URL: http://training:8003
+      INFERENCE_SERVICE_URL: http://inference:8002
+      BINANCE_SYMBOL: BTCUSDT
+    volumes:
+      - ./shared:/app/shared
+      - ./services:/app/services
+      - ./models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      inference:
+        condition: service_started
+      training:
+        condition: service_started
+    networks:
+      - cryptopulse_net
+
+
+  # -------------------------------------------------------------
+  # Prometheus Monitoring Service
+  # -------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: cryptopulse_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - cryptopulse_net
+
+  # -------------------------------------------------------------
+  # Grafana Visualization Service
+  # -------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: cryptopulse_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - cryptopulse_net
+
+volumes:
+  postgres_data:
+    name: cryptopulse_postgres_data
+  mlflow_data:
+    name: cryptopulse_mlflow_data
+  prometheus_data:
+    name: cryptopulse_prometheus_data
+  grafana_data:
+    name: cryptopulse_grafana_data
+
+networks:
+  cryptopulse_net:
+    name: cryptopulse_network
+    driver: bridge

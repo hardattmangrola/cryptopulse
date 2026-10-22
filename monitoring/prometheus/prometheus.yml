@@ -1,0 +1,29 @@
+# CryptoPulse - Prometheus Scrape Configuration
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  # Ingestion microservice (Candles polling, Binance fetch counts)
+  - job_name: "ingestion-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["ingestion:8001"]
+
+  # Inference microservice (Predictions, Latency, Model version)
+  - job_name: "inference-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["inference:8002"]
+
+  # Training microservice (Model quality gates, Retraining counts, Macro F1)
+  - job_name: "training-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["training:8003"]
+
+  # Monitoring microservice (Feature drift, Delayed ground-truth performance)
+  - job_name: "monitoring-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["monitoring:8004"]

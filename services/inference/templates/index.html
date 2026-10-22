@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CryptoPulse — Real-Time BTC Movement Classifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #000000;
+      --bg-surface: #0a0a0c;
+      --card-bg: rgba(14, 14, 17, 0.85);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --card-border-hover: rgba(255, 255, 255, 0.28);
+      --text-main: #ffffff;
+      --text-muted: #a1a1aa;
+      --text-subtle: #71717a;
+      --accent-white: #ffffff;
+      --color-up: #22c55e;
+      --color-down: #ef4444;
+      --color-stable: #e4e4e7;
+      --glow-up: 0 0 20px rgba(34, 197, 94, 0.25);
+      --glow-down: 0 0 20px rgba(239, 68, 68, 0.25);
+      --glow-stable: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(at 50% 0%, rgba(255, 255, 255, 0.05) 0px, transparent 65%);
+      background-attachment: fixed;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #18181b;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.08);
+      letter-spacing: -0.5px;
+    }
+
+    .logo-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+
+    .logo-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Date and Time Digital Clock Badge */
+    .clock-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f0f12;
+      border: 1px solid var(--card-border);
+      padding: 7px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #e4e4e7;
+    }
+
+    .clock-date {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .clock-divider {
+      color: var(--text-subtle);
+    }
+
+    .clock-time {
+      color: #a1a1aa;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f0f12;
+      border: 1px solid var(--card-border);
+      padding: 7px 14px;
+      border-radius: 9999px;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--color-up);
+      box-shadow: 0 0 10px var(--color-up);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 920px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #e4e4e7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Price Section */
+    .price-value {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #fff;
+      margin: 8px 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .price-currency {
+      font-size: 18px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .market-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .stat-mini-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-subtle);
+      margin-bottom: 4px;
+    }
+
+    .stat-val {
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffffff;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .predict-btn {
+      flex: 2;
+      min-width: 200px;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      background: #ffffff;
+      color: #000000;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+    }
+
+    .predict-btn:hover {
+      background: #e4e4e7;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25);
+    }
+
+    .predict-btn:active {
+      transform: translateY(0);
+    }
+
+    .predict-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .retrain-btn {
+      flex: 1;
+      min-width: 180px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      background: #141417;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .retrain-btn:hover {
+      background: #202024;
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .retrain-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .prediction-display-box {
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--card-border);
+      transition: all 0.3s ease;
+      margin-bottom: 24px;
+    }
+
+    .prediction-display-box.up {
+      border-color: var(--color-up);
+      background: rgba(34, 197, 94, 0.05);
+      box-shadow: var(--glow-up);
+    }
+
+    .prediction-display-box.down {
+      border-color: var(--color-down);
+      background: rgba(239, 68, 68, 0.05);
+      box-shadow: var(--glow-down);
+    }
+
+    .prediction-display-box.stable {
+      border-color: var(--card-border-hover);
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow: var(--glow-stable);
+    }
+
+    .prediction-badge {
+      display: inline-block;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .prediction-badge.up { color: var(--color-up); }
+    .prediction-badge.down { color: var(--color-down); }
+    .prediction-badge.stable { color: #ffffff; }
+
+    .prediction-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Probabilities bars */
+    .prob-bars-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .prob-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .prob-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .bar-fill.down { background: var(--color-down); }
+    .bar-fill.stable { background: #e4e4e7; }
+    .bar-fill.up { background: var(--color-up); }
+
+    /* KPI Summary Strip */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 600;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Recent Table */
+    .table-card {
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--text-subtle);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: 'JetBrains Mono', monospace;
+      color: #e4e4e7;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .pill.UP {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--color-up);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .pill.DOWN {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--color-down);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .pill.STABLE {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pill.correct {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .pill.incorrect {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .pill.pending {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e4e4e7;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      animation: pulse 1.5s infinite;
+    }
+
+    /* Nav Links */
+    .links-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+      justify-content: center;
+    }
+
+    .nav-btn {
+      text-decoration: none;
+      color: #a1a1aa;
+      background: #101014;
+      border: 1px solid var(--card-border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: #202024;
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: #18181b;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Outfit', sans-serif;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #27272a;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Notification banner */
+    .toast-banner {
+      display: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--card-border);
+      background: #141417;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">CP</div>
+        <div>
+          <div class="logo-title">CryptoPulse Real-Time Predictor</div>
+          <div class="logo-subtitle">Continuous MLOps Price Movement Classifier • BTC/USDT (1-Min Horizon)</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live Date and Time Digital Display -->
+        <div class="clock-badge" id="liveClockBadge">
+          <span class="clock-date" id="clockDate">-- --- ----</span>
+          <span class="clock-divider">•</span>
+          <span class="clock-time" id="clockTime">--:--:--</span>
+        </div>
+
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          <span id="systemStatusText">Pipeline Active</span>
+        </div>
+
+        <div class="status-badge" style="font-family: 'JetBrains Mono', monospace; font-weight: 600;" id="modelVersionBadge">
+          Model: v1.0.0
+        </div>
+      </div>
+    </header>
+
+    <!-- Notification Toast -->
+    <div id="toastBanner" class="toast-banner">
+      <span id="toastMsg">Notification message</span>
+      <button style="background: none; border: none; color: #a1a1aa; cursor: pointer;" onclick="hideToast()">✕</button>
+    </div>
+
+    <!-- Main Dashboard Row -->
+    <div class="dashboard-grid">
+      <!-- Left: Real-Time Market Ticker -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Live Spot Market (Binance)</div>
+          <button class="btn-secondary" onclick="fetchLiveMarket()">↻ Refresh Spot</button>
+        </div>
+
+        <div>
+          <div class="price-value" id="btcPrice">
+            $---,---.-- <span class="price-currency">USDT</span>
+          </div>
+          <div id="lastCandleDateTime" style="font-size: 13px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
+            Live Spot Date & Time: Awaiting sync...
+          </div>
+        </div>
+
+        <div class="market-stats-row">
+          <div class="stat-mini-box">
+            <div class="stat-label">Pair</div>
+            <div class="stat-val">BTC / USDT</div>
+          </div>
+          <div class="stat-mini-box">
+            <div class="stat-label">Candle Interval</div>
+            <div class="stat-val">1 Minute</div>
+          </div>
+          <div class="stat-mini-box">
+            <div class="stat-label">24h Volume</div>
+            <div class="stat-val" id="statVol">-- BTC</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--card-border);">
+          <div class="card-title" style="margin-bottom: 8px;">1-Minute Target Thresholds</div>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+            • <strong style="color: var(--color-up);">UP:</strong> Return &gt; +0.05% over next 1 minute.<br>
+            • <strong style="color: var(--color-down);">DOWN:</strong> Return &lt; -0.05% over next 1 minute.<br>
+            • <strong style="color: #ffffff;">STABLE:</strong> Return remains within &plusmn;0.05%.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: Real-time Prediction Engine & Retraining -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">ML Inference Engine</div>
+          <span style="font-size: 12px; color: #a1a1aa; font-family: 'JetBrains Mono', monospace;" id="engineVersionLabel">Loaded: v1.0.0</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-group">
+          <button id="btnPredict" class="predict-btn" onclick="executePrediction()">
+            <span>⚡ Run Real-Time Prediction (Next 1m)</span>
+          </button>
+          <button id="btnRetrain" class="retrain-btn" onclick="executeRetraining()">
+            <span>🚀 Retrain Model (Next Version)</span>
+          </button>
+        </div>
+
+        <div id="predDisplayBox" class="prediction-display-box">
+          <div id="predClass" class="prediction-badge">—</div>
+          <div id="predDesc" class="prediction-desc">Click "Run Real-Time Prediction" to classify latest 60-candle features</div>
+        </div>
+
+        <div class="prob-bars-container">
+          <!-- DOWN -->
+          <div class="prob-row">
+            <div class="prob-info">
+              <span style="color: var(--color-down);">DOWN (&lt; -0.05%)</span>
+              <span id="probDownVal" style="font-family: 'JetBrains Mono', monospace;">0.0%</span>
+            </div>
+            <div class="bar-track">
+              <div id="barDown" class="bar-fill down" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- STABLE -->
+          <div class="prob-row">
+            <div class="prob-info">
+              <span style="color: #ffffff;">STABLE (&plusmn;0.05%)</span>
+              <span id="probStableVal" style="font-family: 'JetBrains Mono', monospace;">0.0%</span>
+            </div>
+            <div class="bar-track">
+              <div id="barStable" class="bar-fill stable" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- UP -->
+          <div class="prob-row">
+            <div class="prob-info">
+              <span style="color: var(--color-up);">UP (&gt; +0.05%)</span>
+              <span id="probUpVal" style="font-family: 'JetBrains Mono', monospace;">0.0%</span>
+            </div>
+            <div class="bar-track">
+              <div id="barUp" class="bar-fill up" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Performance KPIs -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Predictions</div>
+        <div class="kpi-value" id="kpiTotal">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Pending Evaluation (&lt; 1m)</div>
+        <div class="kpi-value" style="color: #f59e0b;" id="kpiPending">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Ground-Truth Evaluated</div>
+        <div class="kpi-value" style="color: #ffffff;" id="kpiEvaluated">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Live 1m Accuracy</div>
+        <div class="kpi-value" style="color: #4ade80;" id="kpiAccuracy">—</div>
+      </div>
+    </div>
+
+    <!-- Recent Predictions Table -->
+    <div class="card table-card">
+      <div class="card-header">
+        <div class="card-title">Live 1-Minute Inference & Delayed Ground Truth Logs</div>
+        <button class="btn-secondary" onclick="fetchRecentPredictions()">↻ Refresh Table</button>
+      </div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date &amp; Time (UTC)</th>
+              <th>Prediction</th>
+              <th>P(Down)</th>
+              <th>P(Stable)</th>
+              <th>P(Up)</th>
+              <th>Model Version</th>
+              <th>1-Min Ground Truth Outcome</th>
+            </tr>
+          </thead>
+          <tbody id="predictionsTableBody">
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                No predictions logged yet. Click "Run Real-Time Prediction" above to generate live inference.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Quick Navigation to Supporting Services -->
+    <div class="links-bar">
+      <a href="/docs" target="_blank" class="nav-btn">Inference API (:8002)</a>
+      <a href="http://localhost:8004/docs" target="_blank" class="nav-btn">Monitoring &amp; Drift API (:8004)</a>
+      <a href="http://localhost:8003/docs" target="_blank" class="nav-btn">Training API (:8003)</a>
+      <a href="http://localhost:8001/docs" target="_blank" class="nav-btn">Ingestion API (:8001)</a>
+      <a href="http://localhost:5000" target="_blank" class="nav-btn">MLflow Model Registry (:5000)</a>
+      <a href="http://localhost:3000" target="_blank" class="nav-btn">Grafana Dashboards (:3000)</a>
+      <a href="http://localhost:9090" target="_blank" class="nav-btn">Prometheus Explorer (:9090)</a>
+    </div>
+  </div>
+
+  <script>
+    let activeModelVersion = "1.0.0";
+
+    // Format UNIX timestamp into clean Date & Time string (YYYY-MM-DD HH:MM:SS)
+    function formatDateTime(timestampInSeconds) {
+      if (!timestampInSeconds) return "N/A";
+      const date = new Date(timestampInSeconds * 1000);
+      const pad = (n) => String(n).padStart(2, "0");
+      const year = date.getUTCFullYear();
+      const month = pad(date.getUTCMonth() + 1);
+      const day = pad(date.getUTCDate());
+      const hours = pad(date.getUTCHours());
+      const minutes = pad(date.getUTCMinutes());
+      const seconds = pad(date.getUTCSeconds());
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
+    }
+
+    // Live Clock Ticker in Header
+    function updateLiveClock() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const year = now.getUTCFullYear();
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = months[now.getUTCMonth()];
+      const day = pad(now.getUTCDate());
+      const hours = pad(now.getUTCHours());
+      const minutes = pad(now.getUTCMinutes());
+      const seconds = pad(now.getUTCSeconds());
+
+      document.getElementById("clockDate").innerText = `${day} ${month} ${year}`;
+      document.getElementById("clockTime").innerText = `${hours}:${minutes}:${seconds} UTC`;
+    }
+
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById("toastBanner");
+      const msg = document.getElementById("toastMsg");
+      toast.style.display = "flex";
+      toast.style.borderColor = isSuccess ? "rgba(34, 197, 94, 0.4)" : "rgba(239, 68, 68, 0.4)";
+      msg.innerText = message;
+    }
+
+    function hideToast() {
+      document.getElementById("toastBanner").style.display = "none";
+    }
+
+    // Fetch active model health and version
+    async function checkActiveModel() {
+      try {
+        const resp = await fetch("/health");
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.model_version) {
+            activeModelVersion = data.model_version;
+            document.getElementById("modelVersionBadge").innerText = "Model: v" + activeModelVersion;
+            document.getElementById("engineVersionLabel").innerText = "Loaded: v" + activeModelVersion;
+          }
+        }
+      } catch (err) {
+        console.debug("Could not reach /health endpoint", err);
+      }
+    }
+
+    // Fetch live market data directly from Binance public API
+    async function fetchLiveMarket() {
+      try {
+        const resp = await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT");
+        if (resp.ok) {
+          const data = await resp.json();
+          const price = parseFloat(data.lastPrice);
+          document.getElementById("btcPrice").innerHTML = 
+            `$${price.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span class="price-currency">USDT</span>`;
+          document.getElementById("statVol").innerText = `${parseFloat(data.volume).toFixed(1)} BTC`;
+          document.getElementById("lastCandleDateTime").innerText = 
+            `Live Spot Date & Time: ${formatDateTime(Math.floor(data.closeTime / 1000))}`;
+        }
+      } catch (err) {
+        console.warn("Could not reach Binance directly, falling back to local service", err);
+      }
+    }
+
+    // Execute prediction via /predict endpoint
+    async function executePrediction() {
+      const btn = document.getElementById("btnPredict");
+      btn.disabled = true;
+      btn.innerText = "⏳ Engineering Features & Predicting...";
+
+      try {
+        const resp = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({})
+        });
+
+        if (!resp.ok) {
+          const errorData = await resp.json();
+          throw new Error(errorData.detail || "Prediction request failed");
+        }
+
+        const data = await resp.json();
+        renderPrediction(data);
+        fetchRecentPredictions();
+      } catch (err) {
+        showToast("Prediction error: " + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "⚡ Run Real-Time Prediction (Next 1m)";
+      }
+    }
+
+    function renderPrediction(data) {
+      const box = document.getElementById("predDisplayBox");
+      const badge = document.getElementById("predClass");
+      const desc = document.getElementById("predDesc");
+
+      box.className = "prediction-display-box " + data.prediction.toLowerCase();
+      badge.className = "prediction-badge " + data.prediction.toLowerCase();
+
+      let symbolArrow = "";
+      if (data.prediction === "UP") symbolArrow = "↑ ";
+      else if (data.prediction === "DOWN") symbolArrow = "↓ ";
+      else symbolArrow = "↔ ";
+
+      badge.innerText = symbolArrow + data.prediction;
+
+      const pDown = (data.probabilities.DOWN * 100).toFixed(1);
+      const pStable = (data.probabilities.STABLE * 100).toFixed(1);
+      const pUp = (data.probabilities.UP * 100).toFixed(1);
+
+      desc.innerText = `Prediction #${data.prediction_id || 'N/A'} • 1-Minute Horizon (Evaluating in 60s) • Model: v${data.model_version || activeModelVersion}`;
+
+      document.getElementById("probDownVal").innerText = pDown + "%";
+      document.getElementById("probStableVal").innerText = pStable + "%";
+      document.getElementById("probUpVal").innerText = pUp + "%";
+
+      document.getElementById("barDown").style.width = pDown + "%";
+      document.getElementById("barStable").style.width = pStable + "%";
+      document.getElementById("barUp").style.width = pUp + "%";
+
+      if (data.model_version) {
+        activeModelVersion = data.model_version;
+        document.getElementById("modelVersionBadge").innerText = "Model: v" + activeModelVersion;
+        document.getElementById("engineVersionLabel").innerText = "Loaded: v" + activeModelVersion;
+      }
+    }
+
+    // Trigger Retraining with Version Increment
+    async function executeRetraining() {
+      const btn = document.getElementById("btnRetrain");
+      btn.disabled = true;
+      btn.innerText = "⏳ Training & Registering to MLflow...";
+
+      showToast("Triggering model training pipeline with automated version increment...", true);
+
+      try {
+        const resp = await fetch("/retrain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.detail || data.error || "Retraining request failed");
+        }
+
+        const newVersion = data.model_version || "updated";
+        activeModelVersion = newVersion;
+        document.getElementById("modelVersionBadge").innerText = "Model: v" + newVersion;
+        document.getElementById("engineVersionLabel").innerText = "Loaded: v" + newVersion;
+
+        showToast(`✅ Model successfully trained, registered to MLflow, and promoted to v${newVersion}!`, true);
+        checkActiveModel();
+        fetchRecentPredictions();
+      } catch (err) {
+        showToast("Retraining error: " + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "🚀 Retrain Model (Next Version)";
+      }
+    }
+
+    // Fetch recent predictions from /predictions/recent
+    async function fetchRecentPredictions() {
+      try {
+        const resp = await fetch("/predictions/recent?limit=10");
+        if (resp.ok) {
+          const list = await resp.json();
+          const tbody = document.getElementById("predictionsTableBody");
+          if (!list || list.length === 0) return;
+
+          let pendingCount = 0;
+          let evaluatedCount = 0;
+          let correctCount = 0;
+
+          tbody.innerHTML = list.map(item => {
+            let evalHtml = "";
+            if (item.evaluation_status === "PENDING") {
+              pendingCount++;
+              const sec = item.seconds_remaining !== undefined ? item.seconds_remaining : 60;
+              evalHtml = `<span class="pill pending">⏳ Evaluating (${sec}s left)</span>`;
+            } else if (item.evaluation_status === "EVALUATED" && item.outcome) {
+              evaluatedCount++;
+              if (item.outcome.is_correct) correctCount++;
+              const isCorr = item.outcome.is_correct;
+              const retPct = (item.outcome.actual_return * 100).toFixed(3);
+              const pillClass = isCorr ? "correct" : "incorrect";
+              const mark = isCorr ? "✓ CORRECT" : "✗ INCORRECT";
+              evalHtml = `
+                <span class="pill ${pillClass}">${mark}</span>
+                <span style="font-size: 12px; color: #a1a1aa; margin-left: 8px;">
+                  Actual: <strong>${item.outcome.actual_class}</strong> (${retPct > 0 ? "+" : ""}${retPct}%)
+                </span>
+              `;
+            } else {
+              evalHtml = `<span style="color: #71717a;">${item.evaluation_status}</span>`;
+            }
+
+            return `
+              <tr>
+                <td>#${item.id}</td>
+                <td>${formatDateTime(item.prediction_timestamp)}</td>
+                <td><span class="pill ${item.predicted_class}">${item.predicted_class}</span></td>
+                <td>${(item.class_probabilities.DOWN * 100).toFixed(1)}%</td>
+                <td>${(item.class_probabilities.STABLE * 100).toFixed(1)}%</td>
+                <td>${(item.class_probabilities.UP * 100).toFixed(1)}%</td>
+                <td style="color: #a1a1aa;">v${item.model_version}</td>
+                <td>${evalHtml}</td>
+              </tr>
+            `;
+          }).join("");
+
+          // Update KPI Strip
+          document.getElementById("kpiTotal").innerText = list.length;
+          document.getElementById("kpiPending").innerText = pendingCount;
+          document.getElementById("kpiEvaluated").innerText = evaluatedCount;
+          if (evaluatedCount > 0) {
+            const acc = ((correctCount / evaluatedCount) * 100).toFixed(1);
+            document.getElementById("kpiAccuracy").innerText = acc + "%";
+          } else {
+            document.getElementById("kpiAccuracy").innerText = "Awaiting 1m...";
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch recent predictions", err);
+      }
+    }
+
+    // Initial setup
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000); // 1-second ticking live clock
+
+    checkActiveModel();
+    fetchLiveMarket();
+    fetchRecentPredictions();
+
+    setInterval(checkActiveModel, 10000);
+    setInterval(fetchLiveMarket, 10000);
+    setInterval(fetchRecentPredictions, 3000); // 3s polling for real-time evaluation updates
+  </script>
+</body>
+</html>

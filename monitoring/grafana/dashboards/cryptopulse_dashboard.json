@@ -1,0 +1,345 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Active Production Model Version",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "cryptopulse_active_model_version",
+          "legendFormat": "{{version}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#18181b", "mode": "fixed" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Rolling 1-Min Ground-Truth Accuracy",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 0 },
+      "targets": [
+        {
+          "expr": "cryptopulse_model_rolling_accuracy",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.50 },
+              { "color": "green", "value": 0.70 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Rolling Macro F1 Score",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 0 },
+      "targets": [
+        {
+          "expr": "cryptopulse_model_rolling_macro_f1",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.30 },
+              { "color": "green", "value": 0.35 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Baseline Test Macro F1",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 14, "y": 0 },
+      "targets": [
+        {
+          "expr": "cryptopulse_model_test_macro_f1",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.30 },
+              { "color": "green", "value": 0.35 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Total Evaluated (Ground Truth)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(cryptopulse_prediction_outcomes_total) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"] },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Total Predictions",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 21, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(cryptopulse_predictions_total) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"] },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 7,
+      "title": "Ground-Truth Evaluation: Correct vs Incorrect",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "sum by (is_correct) (cryptopulse_prediction_outcomes_total)",
+          "legendFormat": "Correct: {{is_correct}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right" },
+        "pieType": "donut",
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Ground-Truth Class Outcomes (Actual Movements)",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 4 },
+      "targets": [
+        {
+          "expr": "sum by (actual_class) (cryptopulse_prediction_outcomes_total)",
+          "legendFormat": "{{actual_class}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true
+      }
+    },
+    {
+      "id": 9,
+      "title": "Rolling Evaluation Accuracy & Macro F1 Trend",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 4 },
+      "targets": [
+        {
+          "expr": "cryptopulse_model_rolling_accuracy",
+          "legendFormat": "Rolling Accuracy",
+          "refId": "A"
+        },
+        {
+          "expr": "cryptopulse_model_rolling_macro_f1",
+          "legendFormat": "Rolling Macro F1",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Feature Drift PSI (Population Stability Index)",
+      "type": "bargauge",
+      "gridPos": { "h": 9, "w": 14, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "cryptopulse_feature_drift_psi",
+          "legendFormat": "{{feature}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 0.50,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.10 },
+              { "color": "red", "value": 0.25 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Continuous Retraining Events & Drift Alerts",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 10, "x": 14, "y": 12 },
+      "targets": [
+        {
+          "expr": "sum by (reason) (cryptopulse_retraining_triggered_total)",
+          "legendFormat": "Retraining ({{reason}})",
+          "refId": "A"
+        },
+        {
+          "expr": "cryptopulse_drift_alerts_total",
+          "legendFormat": "Drift Breaches (PSI >= 0.25)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Predicted Movement Distribution (Model Output)",
+      "type": "bargauge",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 21 },
+      "targets": [
+        {
+          "expr": "sum by (predicted_class) (cryptopulse_predictions_total)",
+          "legendFormat": "{{predicted_class}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic"
+      }
+    },
+    {
+      "id": 13,
+      "title": "Binance Ingestion & API Reliability",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 21 },
+      "targets": [
+        {
+          "expr": "cryptopulse_candles_ingested_total",
+          "legendFormat": "Ingested Candles (DB)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (status) (cryptopulse_binance_fetch_total)",
+          "legendFormat": "Binance API ({{status}})",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "p95 Inference Latency (Feature Calc + Model)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 21 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(cryptopulse_prediction_latency_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p95 Latency",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["cryptopulse", "mlops", "bitcoin", "monitoring"],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m"]
+  },
+  "timezone": "browser",
+  "title": "CryptoPulse Continuous MLOps Overview",
+  "uid": "cryptopulse-overview",
+  "version": 2
+}

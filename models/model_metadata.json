@@ -1,0 +1,96 @@
+{
+  "model_version": "1.4.0",
+  "model_type": "XGBClassifier",
+  "prediction_horizon_minutes": 1,
+  "classification_threshold": 0.0005,
+  "feature_columns": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "return_1m",
+    "return_5m",
+    "return_15m",
+    "sma_5",
+    "sma_15",
+    "sma_60",
+    "ema_5",
+    "ema_15",
+    "rolling_std_15",
+    "rsi_14",
+    "volume_change_1m",
+    "volume_ma_15",
+    "hl_spread",
+    "hour",
+    "day_of_week"
+  ],
+  "class_labels": {
+    "0": "DOWN",
+    "1": "STABLE",
+    "2": "UP"
+  },
+  "hyperparameters": {
+    "n_estimators": 100,
+    "max_depth": 5,
+    "learning_rate": 0.05
+  },
+  "dataset_rows_used": 100000,
+  "train_samples": 69958,
+  "val_samples": 14991,
+  "test_samples": 14991,
+  "metrics": {
+    "val_macro_f1": 0.3261398654950611,
+    "val_accuracy": 0.7594556734040424,
+    "val_macro_precision": 0.46489754755827567,
+    "val_macro_recall": 0.350624997427103,
+    "val_per_class_f1": {
+      "DOWN_F1": 0.07210816224336505,
+      "STABLE_F1": 0.8666974169741697,
+      "UP_F1": 0.03961401726764855
+    },
+    "val_confusion_matrix": [
+      [
+        72,
+        1623,
+        49
+      ],
+      [
+        92,
+        11274,
+        27
+      ],
+      [
+        89,
+        1726,
+        39
+      ]
+    ],
+    "test_macro_f1": 0.33476795632977724,
+    "test_accuracy": 0.8532452805016343,
+    "test_macro_precision": 0.3867972498616296,
+    "test_macro_recall": 0.3474159229477148,
+    "test_per_class_f1": {
+      "DOWN_F1": 0.08188976377952756,
+      "STABLE_F1": 0.9224141052098042,
+      "UP_F1": 0.0
+    },
+    "test_confusion_matrix": [
+      [
+        52,
+        1044,
+        1
+      ],
+      [
+        65,
+        12739,
+        1
+      ],
+      [
+        56,
+        1033,
+        0
+      ]
+    ]
+  }
+}
