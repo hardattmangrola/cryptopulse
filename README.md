@@ -15,48 +15,7 @@ Designed specifically for academic, university-level demonstration and practical
 
 ## Architecture Overview
 
-```
-                      +------------------------------------+
-                      |    Binance Public REST API (1m)    |
-                      +-----------------+------------------+
-                                        |
-                 +----------------------+----------------------+
-                 |                                             |
-                 v                                             v
-+-------------------------------+             +---------------------------------+
-|      Ingestion Service        |             |        Inference Service        |
-|  (FastAPI - Port :8001)       |             |   (FastAPI & Web UI - :8002)    |
-| - Polling 1m completed candles|             | - 1-Min Ahead Classification    |
-| - De-duplication & DB insert  |             | - Live Web UI with 60s Feedback |
-+---------------+---------------+             +----------------+----------------+
-                |                                              |
-                +-----------------------+----------------------+
-                                        |
-                                        v
-                    +---------------------------------------+
-                    |       PostgreSQL Database (:5432)     |
-                    | - market_data     - predictions       |
-                    | - model_runs      - prediction_outcomes|
-                    | - drift_metrics                       |
-                    +-------------------+-------------------+
-                                        |
-                 +----------------------+----------------------+
-                 |                                             |
-                 v                                             v
-+-------------------------------+             +---------------------------------+
-|      Training Service         |             |       Monitoring Service        |
-|   (FastAPI - Port :8003)      |             |     (FastAPI - Port :8004)      |
-| - Historical training (1m)    |             | - Delayed 1m Ground Truth Eval  |
-| - Quality Gate (Macro F1)     | <---------- | - PSI & KS Feature Drift Check  |
-| - MLflow Experiment Logging   |  (Retrain   | - Retraining Cooldown Controller|
-+---------------+---------------+   Trigger)  +----------------+----------------+
-                |                                              |
-                v                                              v
-+-------------------------------+             +---------------------------------+
-|      MLflow Server (:5000)    |             |   Prometheus (:9090) & Grafana  |
-| - Model artifacts & params    |             |   Dashboards (:3000)            |
-+-------------------------------+             +---------------------------------+
-```
+![architecture](public\architecture.png)
 
 ---
 
