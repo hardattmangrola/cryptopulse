@@ -36,7 +36,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                bat 'pytest tests -v'
+                bat 'docker compose run --rm inference pytest tests -v'
             }
         }
 

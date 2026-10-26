@@ -7,8 +7,10 @@ requests>=2.31.0
 python-dotenv>=1.0.0
 pydantic>=2.5.0
 
-# Testing
+# Testing & CI/CD
 pytest>=7.4.0
+httpx>=0.25.0
+PyYAML>=6.0.1
 
 # Machine learning & modeling (Phase 2+)
 scikit-learn>=1.3.0

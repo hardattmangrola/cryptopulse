@@ -89,6 +89,7 @@ services:
       - ./services:/app/services
       - ./models:/app/models
       - ./btcusd_1-min_data.csv:/app/btcusd_1-min_data.csv:ro
+      - ./tests:/app/tests:ro
     depends_on:
       postgres:
         condition: service_healthy
