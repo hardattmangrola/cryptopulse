@@ -2,7 +2,7 @@
 
 **CryptoPulse** is an end-to-end, microservice-based Continuous MLOps platform that predicts Bitcoin (BTC/USDT) short-term price movement direction (`UP`, `STABLE`, or `DOWN`) **1 minute ahead** with **real-time ground-truth evaluation displayed on a live Web UI within 60 seconds**.
 
-Designed specifically for academic, university-level demonstration and practical learning, the system covers the entire machine learning and MLOps lifecycle:
+The system covers the entire machine learning and MLOps lifecycle:
 1. **Historical Model Training & MLflow Experiment Tracking**: XGBoost classification model logged and versioned in MLflow (`mlflow.xgboost.log_model`).
 2. **Live Market Data Ingestion**: Non-blocking polling of 1-minute completed candles from Binance's public REST API (`GET /api/v3/klines`).
 3. **Real-Time Inference REST API & Interactive Web UI**: High-throughput inference with live Binance ticker, animated probability distribution bars, and live countdown badges.
@@ -15,7 +15,7 @@ Designed specifically for academic, university-level demonstration and practical
 
 ## Architecture Overview
 
-![architecture](public\architecture.png)
+![architecture](public/architecture.png)
 
 ---
 
@@ -37,7 +37,10 @@ Designed specifically for academic, university-level demonstration and practical
 
 ### Target Class Definitions
 For a candle at timestamp $t$ with close price $P_t$, the model predicts price movement over the next **1 minute** ($t + 60\text{s}$) with close price $P_{t+60\text{s}}$:
-$$\text{Return}_{1\text{m}} = \frac{P_{t+60\text{s}} - P_t}{P_t}$$
+
+$$
+\text{Return}_{1\text{m}} = \frac{P_{t+60\text{s}} - P_t}{P_t}
+$$
 
 - **`UP`**: $\text{Return}_{1\text{m}} > +0.05\%$
 - **`DOWN`**: $\text{Return}_{1\text{m}} < -0.05\%$
@@ -58,7 +61,7 @@ $$\text{Return}_{1\text{m}} = \frac{P_{t+60\text{s}} - P_t}{P_t}$$
 
 ---
 
-## Continuous Maintenance (Phase 7)
+## Continuous Maintenance 
 
 ### 1. Data Drift Detection (PSI & KS-Test)
 - Baseline reference deciles ($q_{0.10}, \dots, q_{0.90}$) for all 20 technical indicators are extracted from training data into `models/reference_distribution.json`.
