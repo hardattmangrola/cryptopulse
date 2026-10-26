@@ -1,0 +1,53 @@
+# CryptoPulse - Prometheus Alerting Rules
+groups:
+  - name: cryptopulse_alerts
+    rules:
+      # 1. MLOps Feature Drift Alert
+      - alert: HighFeatureDriftDetected
+        expr: cryptopulse_feature_drift_psi >= 0.25
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Feature drift detected on {{ $labels.feature }}"
+          description: "Feature drift PSI is {{ $value }}, exceeding threshold of 0.25."
+
+      # 2. Model Performance Degradation Alert
+      - alert: LowModelMacroF1
+        expr: cryptopulse_model_rolling_macro_f1 < 0.30 and cryptopulse_model_rolling_macro_f1 > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model Macro F1 score degraded"
+          description: "Rolling Macro F1 has dropped to {{ $value }} (threshold < 0.30)."
+
+      # 3. High Inference Latency Alert
+      - alert: HighPredictionLatency
+        expr: (rate(cryptopulse_prediction_latency_seconds_sum[1m]) / rate(cryptopulse_prediction_latency_seconds_count[1m])) > 1.5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High prediction latency detected"
+          description: "Average inference latency is {{ $value }}s (> 1.5s threshold)."
+
+      # 4. Service HTTP 5xx Server Error Alert
+      - alert: HighHTTP5xxErrorRate
+        expr: rate(cryptopulse_http_requests_total{status=~"5.."}[1m]) > 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx errors on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} endpoint {{ $labels.endpoint }} is failing with 5xx status."
+
+      # 5. Process High Memory Usage Alert
+      - alert: HighProcessMemoryUsage
+        expr: process_resident_memory_bytes > 524288000
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory consumption on {{ $labels.job }}"
+          description: "Resident memory (RSS) is {{ $value }} bytes, exceeding 500MB."
