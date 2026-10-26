@@ -3,15 +3,6 @@ CryptoPulse - Core Services Smoke Test
 Validates that all microservices (ingestion, inference, training, monitoring) are present and importable.
 """
 
-import sys
-from pathlib import Path
-
-# Ensure project root is in sys.path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-
 def test_all_services_present():
     """Verify all 4 microservices are present and initialized."""
     from services.ingestion.app import app as ingestion_app
