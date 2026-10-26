@@ -12,6 +12,14 @@ pipeline {
             }
         }
 
+        stage('Setup Environment') {
+            steps {
+                withCredentials([file(credentialsId: 'cryptopulse-env', variable: 'SECRET_ENV')]) {
+                    bat 'copy /Y "%SECRET_ENV%" .env'
+                }
+            }
+        }
+
         stage('Show Workspace') {
             steps {
                 bat 'cd'
